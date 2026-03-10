@@ -8,4 +8,5 @@ type Event struct {
 	UserID     string    `json:"user_id"`
 	EventType  string    `json:"event_type"`
 	Timestamp  time.Time `json:"timestamp"`
+	MessageID  string    `json:"message_id,omitempty"`
 }
