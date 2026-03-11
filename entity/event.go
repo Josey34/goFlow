@@ -9,4 +9,6 @@ type Event struct {
 	EventType  string    `json:"event_type"`
 	Timestamp  time.Time `json:"timestamp"`
 	MessageID  string    `json:"message_id,omitempty"`
+	BucketName string    `json:"bucket_name"`
+	ObjectName string    `json:"object_name"`
 }
