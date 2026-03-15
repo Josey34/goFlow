@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"goflow/config"
 	"goflow/database"
+	"goflow/repository"
 	"goflow/service"
+	"goflow/usecase"
 
 	awscfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -18,6 +20,7 @@ type Factory struct {
 	Config          *config.Config
 	SQSConsumer     service.EventConsumer
 	MinIODownloader service.FileDownloader
+	ProcessorUC     usecase.ProcessorUsecase
 }
 
 func New(c *config.Config) (*Factory, error) {
@@ -25,6 +28,13 @@ func New(c *config.Config) (*Factory, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if err := database.InitSchema(db); err != nil {
+		return nil, err
+	}
+
+	resultRepo := repository.NewSQLiteResultRepo(db)
+	chunkRepo := repository.NewSQLiteChunkRepo(db)
 
 	awsCfg, err := awscfg.LoadDefaultConfig(context.Background(),
 		awscfg.WithRegion(c.SQSRegion),
@@ -45,10 +55,21 @@ func New(c *config.Config) (*Factory, error) {
 		return nil, err
 	}
 
+	sqsConsumer := service.NewSQSConsumer(sqsClient, c.SQSQueueUrl)
+	minioDownloader := service.NewMinIODownloader(minioClient, c.MinIOBucket)
+
+	processorUC := usecase.NewProcessorUsecase(
+		sqsConsumer, minioDownloader, resultRepo, chunkRepo,
+		usecase.WithWorkers(c.Workers),
+		usecase.WithChunkSize(c.ChunkSize),
+		usecase.WithChunkOverlap(c.ChunkOverlap),
+	)
+
 	return &Factory{
 		DB:              db,
 		Config:          c,
-		SQSConsumer:     service.NewSQSConsumer(sqsClient, c.SQSQueueUrl),
-		MinIODownloader: service.NewMinIODownloader(minioClient, c.MinIOBucket),
+		SQSConsumer:     sqsConsumer,
+		MinIODownloader: minioDownloader,
+		ProcessorUC:     *processorUC,
 	}, nil
 }
