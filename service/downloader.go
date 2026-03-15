@@ -6,5 +6,5 @@ import (
 )
 
 type FileDownloader interface {
-	Download(ctx context.Context, documentID, filename string) (io.ReadCloser, error)
+	Download(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error)
 }

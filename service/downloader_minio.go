@@ -19,8 +19,8 @@ func NewMinIODownloader(client *minio.Client, bucketName string) *MinIODownloade
 	}
 }
 
-func (d *MinIODownloader) Download(ctx context.Context, documentID, filename string) (io.ReadCloser, error) {
-	obj, err := d.client.GetObject(ctx, d.bucketName, documentID, minio.GetObjectOptions{})
+func (d *MinIODownloader) Download(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
+	obj, err := d.client.GetObject(ctx, bucketName, objectName, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
 	}
