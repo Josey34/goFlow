@@ -20,6 +20,8 @@ type Factory struct {
 	Config          *config.Config
 	SQSConsumer     service.EventConsumer
 	MinIODownloader service.FileDownloader
+	ResultRepository repository.ResultRepository
+	ChunkRepository  repository.ChunkRepository
 	ProcessorUC     usecase.ProcessorUsecase
 }
 
@@ -66,10 +68,12 @@ func New(c *config.Config) (*Factory, error) {
 	)
 
 	return &Factory{
-		DB:              db,
-		Config:          c,
-		SQSConsumer:     sqsConsumer,
-		MinIODownloader: minioDownloader,
-		ProcessorUC:     *processorUC,
+		DB:               db,
+		Config:           c,
+		SQSConsumer:      sqsConsumer,
+		MinIODownloader:  minioDownloader,
+		ResultRepository: resultRepo,
+		ChunkRepository:  chunkRepo,
+		ProcessorUC:      *processorUC,
 	}, nil
 }

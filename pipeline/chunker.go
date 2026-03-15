@@ -37,8 +37,10 @@ func (c *Chunker) Process(ctx context.Context, input interface{}) (interface{}, 
 	)
 
 	return &ChunkerOutput{
-		Task:     extractorOutput.Task,
-		FileHash: extractorOutput.FileHash,
-		Chunks:   chunks,
+		Task:          extractorOutput.Task,
+		ExtractedText: extractorOutput.ExtractedText,
+		PageCount:     extractorOutput.PageCount,
+		FileHash:      extractorOutput.FileHash,
+		Chunks:        chunks,
 	}, nil
 }
