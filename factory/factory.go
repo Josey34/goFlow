@@ -8,6 +8,7 @@ import (
 	"goflow/repository"
 	"goflow/service"
 	"goflow/usecase"
+	"time"
 
 	awscfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -16,13 +17,14 @@ import (
 )
 
 type Factory struct {
-	DB              *sql.DB
-	Config          *config.Config
-	SQSConsumer     service.EventConsumer
-	MinIODownloader service.FileDownloader
+	DB               *sql.DB
+	Config           *config.Config
+	SQSConsumer      service.EventConsumer
+	MinIODownloader  service.FileDownloader
 	ResultRepository repository.ResultRepository
 	ChunkRepository  repository.ChunkRepository
-	ProcessorUC     usecase.ProcessorUsecase
+	ProcessorUC      usecase.ProcessorUsecase
+	Cache            service.CacheService
 }
 
 func New(c *config.Config) (*Factory, error) {
@@ -59,6 +61,7 @@ func New(c *config.Config) (*Factory, error) {
 
 	sqsConsumer := service.NewSQSConsumer(sqsClient, c.SQSQueueUrl)
 	minioDownloader := service.NewMinIODownloader(minioClient, c.MinIOBucket)
+	cache := service.NewMemoryCache(time.Duration(c.CacheTTL) * time.Second)
 
 	processorUC := usecase.NewProcessorUsecase(
 		sqsConsumer, minioDownloader, resultRepo, chunkRepo,
@@ -75,5 +78,6 @@ func New(c *config.Config) (*Factory, error) {
 		ResultRepository: resultRepo,
 		ChunkRepository:  chunkRepo,
 		ProcessorUC:      *processorUC,
+		Cache:            cache,
 	}, nil
 }

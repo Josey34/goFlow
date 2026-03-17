@@ -22,7 +22,7 @@ func Process(ctx context.Context, f *factory.Factory) error {
 		ChunkSize:    f.Config.ChunkSize,
 		ChunkOverlap: f.Config.ChunkOverlap,
 	})
-	deduplicator := pipeline.NewDeduplicator(f.ResultRepository)
+	deduplicator := pipeline.NewDeduplicator(f.ResultRepository, f.Cache)
 	aggregator := pipeline.NewAggregator()
 	writer := pipeline.NewWriter(f.ResultRepository, f.ChunkRepository)
 

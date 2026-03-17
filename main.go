@@ -35,6 +35,10 @@ func main() {
 		if err := cmd.Process(ctx, f); err != nil {
 			log.Fatal(err)
 		}
+	case "stats":
+		if err := cmd.Stats(f); err != nil {
+			log.Fatal(err)
+		}
 	default:
 		fmt.Println("Unknown command:", command)
 	}
