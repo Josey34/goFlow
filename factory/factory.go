@@ -25,6 +25,7 @@ type Factory struct {
 	ChunkRepository  repository.ChunkRepository
 	ProcessorUC      usecase.ProcessorUsecase
 	Cache            service.CacheService
+	Limiter          service.RateLimiter
 }
 
 func New(c *config.Config) (*Factory, error) {
@@ -62,6 +63,7 @@ func New(c *config.Config) (*Factory, error) {
 	sqsConsumer := service.NewSQSConsumer(sqsClient, c.SQSQueueUrl)
 	minioDownloader := service.NewMinIODownloader(minioClient, c.MinIOBucket)
 	cache := service.NewMemoryCache(time.Duration(c.CacheTTL) * time.Second)
+	limiter := service.NewSemaphoreLimiter(c.RateLimit)
 
 	processorUC := usecase.NewProcessorUsecase(
 		sqsConsumer, minioDownloader, resultRepo, chunkRepo,
@@ -79,5 +81,6 @@ func New(c *config.Config) (*Factory, error) {
 		ChunkRepository:  chunkRepo,
 		ProcessorUC:      *processorUC,
 		Cache:            cache,
+		Limiter:          limiter,
 	}, nil
 }

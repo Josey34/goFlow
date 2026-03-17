@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"goflow/retry"
 	"goflow/service"
 	"io"
 	"sync"
@@ -15,6 +16,8 @@ type Pool struct {
 	wg         sync.WaitGroup
 	consumer   service.EventConsumer
 	downloader service.FileDownloader
+	maxRetries int
+	limiter    service.RateLimiter
 	ctx        context.Context
 	cancel     context.CancelFunc
 }
@@ -29,6 +32,8 @@ func NewPool(
 	numWorkers int,
 	consumer service.EventConsumer,
 	downloader service.FileDownloader,
+	maxRetries int,
+	limiter service.RateLimiter,
 ) *Pool {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -39,6 +44,8 @@ func NewPool(
 		ErrChan:    make(chan error),
 		consumer:   consumer,
 		downloader: downloader,
+		maxRetries: maxRetries,
+		limiter:    limiter,
 		ctx:        ctx,
 		cancel:     cancel,
 	}
@@ -82,7 +89,20 @@ func (p *Pool) worker(id int) {
 	defer p.wg.Done()
 
 	for task := range p.taskChan {
-		file, err := p.downloader.Download(p.ctx, task.Event.BucketName, task.Event.ObjectName)
+		if err := p.limiter.Acquire(p.ctx); err != nil {
+			p.ErrChan <- err
+			continue
+		}
+		defer p.limiter.Release()
+
+		var file io.ReadCloser
+		var err error
+
+		err = retry.Retry(p.ctx, p.maxRetries, func() error {
+			f, err := p.downloader.Download(p.ctx, task.Event.BucketName, task.Event.ObjectName)
+			file = f
+			return err
+		})
 
 		result := &ProcessingResult{
 			Task:  task,
