@@ -15,14 +15,14 @@ func Process(ctx context.Context, f *factory.Factory) error {
 	fmt.Printf("Workers: %d | ChunkSize: %d | ChunkOverlap: %d\n",
 		f.Config.Workers, f.Config.ChunkSize, f.Config.ChunkOverlap)
 
-	pool := worker.NewPool(f.Config.Workers, f.SQSConsumer, f.MinIODownloader)
+	pool := worker.NewPool(f.Config.Workers, f.SQSConsumer, f.MinIODownloader, f.Config.MaxRetries, f.Limiter)
 
 	extractor := pipeline.NewExtractor()
 	chunker := pipeline.NewChunker(pipeline.StageConfig{
 		ChunkSize:    f.Config.ChunkSize,
 		ChunkOverlap: f.Config.ChunkOverlap,
 	})
-	deduplicator := pipeline.NewDeduplicator(f.ResultRepository)
+	deduplicator := pipeline.NewDeduplicator(f.ResultRepository, f.Cache)
 	aggregator := pipeline.NewAggregator()
 	writer := pipeline.NewWriter(f.ResultRepository, f.ChunkRepository)
 

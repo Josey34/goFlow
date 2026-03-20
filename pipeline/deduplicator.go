@@ -3,17 +3,20 @@ package pipeline
 import (
 	"context"
 	"goflow/repository"
+	"goflow/service"
 )
 
 type Deduplicator struct {
 	name       string
 	resultRepo repository.ResultRepository
+	cache      service.CacheService
 }
 
-func NewDeduplicator(resultRepo repository.ResultRepository) *Deduplicator {
+func NewDeduplicator(resultRepo repository.ResultRepository, cache service.CacheService) *Deduplicator {
 	return &Deduplicator{
 		name:       "Deduplicator",
 		resultRepo: resultRepo,
+		cache:      cache,
 	}
 }
 
@@ -23,6 +26,18 @@ func (d *Deduplicator) Name() string {
 
 func (d *Deduplicator) Process(ctx context.Context, input interface{}) (interface{}, error) {
 	chunkerOutput := input.(*ChunkerOutput)
+	documentID := chunkerOutput.Task.Event.DocumentID
+
+	if _, found := d.cache.Get(ctx, documentID); found {
+		return &DeduplicatorOutput{
+			Task:          chunkerOutput.Task,
+			ExtractedText: chunkerOutput.ExtractedText,
+			PageCount:     chunkerOutput.PageCount,
+			FileHash:      chunkerOutput.FileHash,
+			IsDuplicate:   true,
+			Chunks:        chunkerOutput.Chunks,
+		}, nil
+	}
 
 	isDuplicate := false
 	existing, err := d.resultRepo.FindByHash(ctx, chunkerOutput.FileHash)
@@ -32,6 +47,7 @@ func (d *Deduplicator) Process(ctx context.Context, input interface{}) (interfac
 
 	if existing != nil {
 		isDuplicate = true
+		d.cache.Set(ctx, documentID, existing)
 	}
 
 	return &DeduplicatorOutput{
