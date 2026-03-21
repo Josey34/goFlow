@@ -8,6 +8,9 @@ import (
 	"goflow/config"
 	"goflow/factory"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -24,7 +27,19 @@ func main() {
 	}
 
 	command := flag.Args()[0]
-	ctx := context.Background()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigChan
+		fmt.Printf("\nReceived signal: %v", sig)
+		fmt.Println("Shutting down gracefully")
+		cancel()
+	}()
 
 	switch command {
 	case "health":
@@ -42,4 +57,6 @@ func main() {
 	default:
 		fmt.Println("Unknown command:", command)
 	}
+
+	fmt.Println("Shutdown complete")
 }

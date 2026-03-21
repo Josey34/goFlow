@@ -55,3 +55,27 @@ func (r *SQLiteResultRepo) FindByHash(ctx context.Context, hash string) (*entity
 	}
 	return result, err
 }
+
+func (r *SQLiteResultRepo) GetStats(ctx context.Context) (*entity.ProcessingStats, error) {
+	query := `
+		SELECT 
+			COUNT(*) as total_processed,
+			COUNT(CASE WHEN is_duplicate = 1 THEN 1 END) as duplicates_found,
+			COUNT(CASE WHEN error_message IS NOT NULL THEN 1 END) as errors_encountered,
+			COALESCE(AVG(CAST((julianday(processed_at) - julianday('now')) * 86400 AS REAL)), 0) as avg_processing_time
+		FROM processing_results
+	`
+
+	stats := &entity.ProcessingStats{}
+	err := r.db.QueryRowContext(ctx, query).Scan(
+		&stats.TotalProcessed,
+		&stats.DuplicatesFound,
+		&stats.ErrorsEncountered,
+		&stats.AvgProcessingTime,
+	)
+
+	if err == sql.ErrNoRows {
+		return stats, nil
+	}
+	return stats, err
+}

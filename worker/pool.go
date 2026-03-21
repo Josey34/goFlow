@@ -2,9 +2,12 @@ package worker
 
 import (
 	"context"
+	"fmt"
+	"goflow/logger"
 	"goflow/retry"
 	"goflow/service"
 	"io"
+	"log"
 	"sync"
 )
 
@@ -20,6 +23,7 @@ type Pool struct {
 	limiter    service.RateLimiter
 	ctx        context.Context
 	cancel     context.CancelFunc
+	logger     *logger.Logger
 }
 
 type ProcessingResult struct {
@@ -48,6 +52,7 @@ func NewPool(
 		limiter:    limiter,
 		ctx:        ctx,
 		cancel:     cancel,
+		logger:     logger.New(),
 	}
 }
 
@@ -63,6 +68,14 @@ func (p *Pool) Start() {
 
 func (p *Pool) consumerLoop() {
 	defer p.wg.Done()
+
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg := fmt.Sprintf("Consumer loop panicked: %v", r)
+			log.Println(errMsg)
+			p.ErrChan <- fmt.Errorf(errMsg)
+		}
+	}()
 
 	for {
 		select {
@@ -88,7 +101,19 @@ func (p *Pool) consumerLoop() {
 func (p *Pool) worker(id int) {
 	defer p.wg.Done()
 
+	defer func() {
+		if r := recover(); r != nil {
+			errMsg := fmt.Sprintf("Worker %d panicked: %v", id, r)
+			log.Println(errMsg)
+			p.ErrChan <- fmt.Errorf(errMsg)
+		}
+	}()
+
 	for task := range p.taskChan {
+		ctx := logger.WithCorrelationID(p.ctx, task.CorrelationID)
+
+		p.logger.Info(ctx, "Processing started", task.Event.DocumentID)
+
 		if err := p.limiter.Acquire(p.ctx); err != nil {
 			p.ErrChan <- err
 			continue
