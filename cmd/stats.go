@@ -1,26 +1,37 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+
 	"goflow/factory"
 )
 
 func Stats(f *factory.Factory) error {
-	fmt.Println("=== Cache Statistics ===")
+	ctx := context.Background()
 
-	stats := f.Cache.Stats()
-
-	fmt.Printf("Cache Hits:    %d\n", stats.Hits)
-	fmt.Printf("Cache Misses:  %d\n", stats.Misses)
-	fmt.Printf("Items Cached:  %d\n", stats.Items)
-
-	total := stats.Hits + stats.Misses
-	if total > 0 {
-		hitRate := float64(stats.Hits) / float64(total) * 100
-		fmt.Printf("Hit Rate:      %.2f%%\n", hitRate)
-	} else {
-		fmt.Println("Hit Rate:      N/A (no accesses)")
+	stats, err := f.ResultRepository.GetStats(ctx)
+	if err != nil {
+		return err
 	}
 
+	cacheStats := f.Cache.Stats()
+
+	fmt.Println("\n=== Processing Statistics ===")
+	fmt.Printf("Total Processed:  %d\n", stats.TotalProcessed)
+	fmt.Printf("Duplicates Found: %d\n", stats.DuplicatesFound)
+	fmt.Printf("Errors:           %d\n", stats.ErrorsEncountered)
+	fmt.Printf("Avg Duration:     %.2f seconds\n", stats.AvgProcessingTime)
+
+	fmt.Println("\n=== Cache Statistics ===")
+	fmt.Printf("Cached Items: %d\n", cacheStats.Items)
+	fmt.Printf("Cache Hits:   %d\n", cacheStats.Hits)
+	fmt.Printf("Cache Misses: %d\n", cacheStats.Misses)
+	if cacheStats.Hits+cacheStats.Misses > 0 {
+		hitRate := float64(cacheStats.Hits) / float64(cacheStats.Hits+cacheStats.Misses) * 100
+		fmt.Printf("Hit Rate:     %.2f%%\n", hitRate)
+	}
+
+	fmt.Println()
 	return nil
 }

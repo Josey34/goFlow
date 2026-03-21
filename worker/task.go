@@ -3,6 +3,8 @@ package worker
 import (
 	"goflow/entity"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type ProcessingTask struct {
@@ -17,6 +19,6 @@ func NewProcessingTask(event *entity.Event) *ProcessingTask {
 		Event:         event,
 		CreatedAt:     time.Now(),
 		RetryCount:    0,
-		CorrelationID: event.DocumentID,
+		CorrelationID: uuid.New().String(),
 	}
 }

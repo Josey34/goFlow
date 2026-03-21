@@ -9,6 +9,7 @@ type ResultRepository interface {
 	Insert(ctx context.Context, result *entity.ProcessingResult) error
 	FindByDocID(ctx context.Context, docID string) (*entity.ProcessingResult, error)
 	FindByHash(ctx context.Context, hash string) (*entity.ProcessingResult, error)
+	GetStats(ctx context.Context) (*entity.ProcessingStats, error)
 }
 
 type ChunkRepository interface {
