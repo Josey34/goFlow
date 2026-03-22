@@ -1,0 +1,115 @@
+# Environment & Config
+.env
+.env.local
+.env.*.local
+config/local/
+config/.env*
+
+# Go
+bin/
+dist/
+vendor/
+go.sum
+*.go~
+
+# Build & Artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.test
+*.out
+*.exe
+*.exe~
+*.dll
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.vim/
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+*.hprof
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Vim
+.vim/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*~.nib
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+database/local/
+database/dev/
+
+# Logs
+*.log
+logs/
+*.out
+
+# OS Temporary Files
+.tmp
+tmp/
+temp/
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build Artifacts
+/build/
+/dist/
+/release/
+
+# Local binaries
+/bin/local/
+*.exe
+*.exe~
+
+# Test Coverage
+coverage.out
+coverage.html
+*.coverprofile
+
+# Debugging
+.delve/
+*.dmp
+
+# Custom local files
+local/
+private/
+secrets/
