@@ -123,8 +123,13 @@ func (p *Pool) worker(id int) {
 		var file io.ReadCloser
 		var err error
 
+		objectName := task.Event.ObjectName
+		if objectName == "" {
+			objectName = task.Event.Filename
+		}
+
 		err = retry.Retry(p.ctx, p.maxRetries, func() error {
-			f, err := p.downloader.Download(p.ctx, task.Event.BucketName, task.Event.ObjectName)
+			f, err := p.downloader.Download(p.ctx, task.Event.BucketName, objectName)
 			file = f
 			return err
 		})

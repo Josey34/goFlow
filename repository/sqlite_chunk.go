@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"goflow/entity"
 )
@@ -24,13 +25,12 @@ func (r *SQLiteChunkRepo) InsertBatch(ctx context.Context, chunks []entity.Docum
 
 	for _, chunk := range chunks {
 		query := `
-			INSERT INTO document_chunks 
-			(id, document_id, chunk_index, content, start_page, end_page, char_count)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO document_chunks
+			(id, document_id, chunk_number, chunk_text, created_at)
+			VALUES (?, ?, ?, ?, ?)
 		`
 		_, err := tx.ExecContext(ctx, query,
-			chunk.ID, chunk.DocumentID, chunk.ChunkIndex, chunk.Content,
-			chunk.StartPage, chunk.EndPage, chunk.CharCount,
+			chunk.ID, chunk.DocumentID, chunk.ChunkIndex, chunk.Content, time.Now(),
 		)
 		if err != nil {
 			return err
@@ -42,7 +42,7 @@ func (r *SQLiteChunkRepo) InsertBatch(ctx context.Context, chunks []entity.Docum
 
 func (r *SQLiteChunkRepo) FindByDocID(ctx context.Context, docID string) ([]entity.DocumentChunk, error) {
 	rows, err := r.db.QueryContext(ctx,
-		"SELECT id, document_id, chunk_index, content, start_page, end_page, char_count FROM document_chunks WHERE document_id = ? ORDER BY chunk_index",
+		"SELECT id, document_id, chunk_number, chunk_text FROM document_chunks WHERE document_id = ? ORDER BY chunk_number",
 		docID)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (r *SQLiteChunkRepo) FindByDocID(ctx context.Context, docID string) ([]enti
 	var chunks []entity.DocumentChunk
 	for rows.Next() {
 		var chunk entity.DocumentChunk
-		err := rows.Scan(&chunk.ID, &chunk.DocumentID, &chunk.ChunkIndex, &chunk.Content, &chunk.StartPage, &chunk.EndPage, &chunk.CharCount)
+		err := rows.Scan(&chunk.ID, &chunk.DocumentID, &chunk.ChunkIndex, &chunk.Content)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +63,7 @@ func (r *SQLiteChunkRepo) FindByDocID(ctx context.Context, docID string) ([]enti
 
 func (r *SQLiteChunkRepo) Search(ctx context.Context, query string) ([]entity.DocumentChunk, error) {
 	rows, err := r.db.QueryContext(ctx,
-		"SELECT id, document_id, chunk_index, content, start_page, end_page, char_count FROM document_chunks WHERE content LIKE ?",
+		"SELECT id, document_id, chunk_number, chunk_text FROM document_chunks WHERE chunk_text LIKE ?",
 		"%"+query+"%")
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (r *SQLiteChunkRepo) Search(ctx context.Context, query string) ([]entity.Do
 	var chunks []entity.DocumentChunk
 	for rows.Next() {
 		var chunk entity.DocumentChunk
-		err := rows.Scan(&chunk.ID, &chunk.DocumentID, &chunk.ChunkIndex, &chunk.Content, &chunk.StartPage, &chunk.EndPage, &chunk.CharCount)
+		err := rows.Scan(&chunk.ID, &chunk.DocumentID, &chunk.ChunkIndex, &chunk.Content)
 		if err != nil {
 			return nil, err
 		}

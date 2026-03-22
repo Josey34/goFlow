@@ -65,7 +65,12 @@ func NewProcessorUsecase(
 }
 
 func (uc *ProcessorUsecase) Process(ctx context.Context, event *entity.Event) error {
-	fileReader, err := uc.downloader.Download(ctx, event.BucketName, event.ObjectName)
+	objectName := event.ObjectName
+	if objectName == "" {
+		objectName = event.Filename
+	}
+
+	fileReader, err := uc.downloader.Download(ctx, event.BucketName, objectName)
 	if err != nil {
 		return err
 	}
@@ -76,7 +81,7 @@ func (uc *ProcessorUsecase) Process(ctx context.Context, event *entity.Event) er
 		return err
 	}
 
-	fileReader2, err := uc.downloader.Download(ctx, event.BucketName, event.ObjectName)
+	fileReader2, err := uc.downloader.Download(ctx, event.BucketName, objectName)
 	if err != nil {
 		return err
 	}

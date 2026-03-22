@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/minio/minio-go/v7"
@@ -20,6 +21,14 @@ func NewMinIODownloader(client *minio.Client, bucketName string) *MinIODownloade
 }
 
 func (d *MinIODownloader) Download(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
+	if bucketName == "" {
+		bucketName = d.bucketName
+	}
+
+	if objectName == "" {
+		return nil, errors.New("object name cannot be empty")
+	}
+
 	obj, err := d.client.GetObject(ctx, bucketName, objectName, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, err
